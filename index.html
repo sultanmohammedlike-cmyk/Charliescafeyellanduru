@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>Charlie's Cafe House • Yelandur</title>
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Playfair+Display:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Maps -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDbsMpHyyFEJkpmG6VbGHPQ6sYgQn8kUOg&libraries=places"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background-color: #fbf7f2;
+      color: #2c2b28;
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #splash {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #1e3932;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.6s ease;
+    }
+    .splash-logo {
+      text-align: center;
+      max-width: 260px;
+      width: 70%;
+    }
+    .splash-logo img {
+      width: 100%;
+      height: auto;
+      filter: drop-shadow(0 8px 12px rgba(0,0,0,0.2));
+    }
+    .splash-logo p {
+      color: #d4e9e2;
+      font-family: "Playfair Display", serif;
+      letter-spacing: 3px;
+      margin-top: 16px;
+      font-size: 1rem;
+      text-transform: uppercase;
+    }
+
+    #app {
+      display: none;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px 20px;
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid #d4d2cb;
+      position: sticky;
+      top: 0;
+      background: #fbf7f2;
+      z-index: 50;
+      backdrop-filter: blur(4px);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-logo img {
+      height: 64px;  /* bigger logo */
+      width: auto;
+      border-radius: 40px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    .nav-logo span {
+      font-family: "Playfair Display", serif;
+      font-weight: 600;
+      font-size: 1.5rem;
+      letter-spacing: -0.5px;
+      color: #1e3932;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .cart-btn {
+      background: none;
+      border: none;
+      font-size: 1.6rem;
+      color: #1e3932;
+      position: relative;
+      cursor: pointer;
+    }
+    #cart-count {
+      position: absolute;
+      top: 0; right: 0;
+      background: #c49a6c;
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 600;
+      width: 20px; height: 20px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #fbf7f2;
+    }
+
+    /* Category grid (no side scroll, wrap instead) */
+    .category-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 20px 0 8px;
+    }
+    .cat-chip {
+      background: #e8e3db;
+      color: #2c2b28;
+      padding: 10px 16px;
+      border-radius: 40px;
+      font-weight: 500;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      border: 1px solid #ccc7be;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cat-chip img { width: 24px; height: 24px; border-radius: 20px; object-fit: cover; }
+    .cat-chip.active {
+      background: #1e3932;
+      color: white;
+      border-color: #1e3932;
+    }
+
+    /* Section styling — like reference with image banner & timing */
+    .menu-section {
+      margin: 32px 0 24px;
+      background: white;
+      border-radius: 32px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+      border: 1px solid #ede6dd;
+      overflow: hidden;
+      display: block;  /* all sections stacked */
+    }
+    .section-banner {
+      position: relative;
+      height: 150px;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px 20px;
+    }
+    .section-banner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%);
+    }
+    .banner-content {
+      position: relative;
+      z-index: 2;
+      color: white;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .banner-title {
+      font-family: "Playfair Display", serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .banner-time {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-top: 6px;
+    }
+    .banner-time i { font-size: 0.9rem; }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 16px;
+      padding: 20px;
+    }
+    .menu-card {
+      background: #fdfbf9;
+      border-radius: 20px;
+      padding: 16px 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+      border: 1px solid #f0e8e0;
+      display: flex;
+      flex-direction: column;
+    }
+    .item-name { font-weight: 600; font-size: 1.1rem; color: #1e3932; }
+    .item-desc { font-size: 0.75rem; color: #7e8a84; margin-bottom: 12px; }
+    .item-price { font-weight: 700; font-size: 1.2rem; color: #1e3932; margin-bottom: 12px; }
+    .add-btn {
+      background: #f1ede8;
+      border: 1px solid #d4c9bc;
+      color: #1e3932;
+      padding: 10px 8px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: 0.15s;
+    }
+    .add-btn:hover { background: #1e3932; color: white; }
+
+    /* iOS popup */
+    .ios-popup {
+      position: fixed;
+      bottom: 30px;
+      left: 20px; right: 20px;
+      max-width: 420px;
+      margin: 0 auto;
+      background: #2ecc71;
+      color: white;
+      padding: 16px 20px;
+      border-radius: 40px;
+      box-shadow: 0 20px 40px rgba(46, 204, 113, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1500;
+      transform: translateY(150%);
+      transition: transform 0.35s;
+    }
+    .ios-popup.show { transform: translateY(0); }
+    .popup-placeorder {
+      background: white;
+      color: #1e3932;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 60px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* order panel */
+    .order-panel {
+      position: fixed;
+      top: 0; right: 0;
+      width: 100%; max-width: 440px;
+      height: 100%;
+      background: #ffffff;
+      box-shadow: -8px 0 30px rgba(0,0,0,0.08);
+      z-index: 1000;
+      transform: translateX(100%);
+      transition: transform 0.3s;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .order-panel.open { transform: translateX(0); }
+    .panel-header { padding: 22px 20px; border-bottom: 1px solid #e2dbd2; display: flex; justify-content: space-between; background: #fbf7f2; }
+    .cart-items { padding: 16px 20px; flex: 1; }
+    .cart-summary { padding: 16px 20px; background: #f9f6f2; border-top: 2px dashed #d4c9bc; }
+    .checkout-section { padding: 8px 20px 20px; }
+    .whatsapp-btn { background: #25D366; color: white; padding: 18px; border-radius: 60px; font-weight: 700; width: 100%; border: none; }
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); z-index: 999; display: none; }
+    .overlay.show { display: block; }
+
+    @media (max-width: 600px) {
+      .menu-grid { grid-template-columns: repeat(2, 1fr); }
+      .banner-title { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-logo">
+    <img src="Screenshot_20260422-181614_Instagram.png" alt="Charlie's Cafe Logo">
+    <p>CHARLIE'S CAFE HOUSE<br>YELANDUR</p>
+  </div>
+</div>
+
+<div id="app">
+  <nav class="navbar">
+    <div class="nav-logo">
+      <img src="Screenshot_20260422-181614_Instagram.png" alt="logo">
+      <span>Charlie's cafe · Yelanduru</span>
+    </div>
+    <div class="nav-actions">
+      <button class="cart-btn" id="cartButton"><i class="fas fa-shopping-bag"></i><span id="cart-count">0</span></button>
+    </div>
+  </nav>
+
+  <!-- Category chips – now grid, no side scroll -->
+  <div class="category-grid" id="categoryGrid"></div>
+  <div id="menuContainer"></div>
+
+  <footer style="margin-top:40px; text-align:center; color:#7e8a84;">🍃 charlies cafe yelanduru</footer>
+</div>
+
+<div class="ios-popup" id="iosPopup">
+  <div class="popup-message"><i class="fas fa-check-circle"></i> <span>Added to bag</span></div>
+  <button class="popup-placeorder" id="popupPlaceOrderBtn">Place Order <i class="fas fa-arrow-right"></i></button>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="order-panel" id="orderPanel">
+  <div class="panel-header"><h3>Your order</h3><button class="close-panel" id="closePanelBtn"><i class="fas fa-times"></i></button></div>
+  <div class="cart-items" id="cartItemsContainer"></div>
+  <div class="cart-summary"><div class="summary-row"><span>Subtotal</span><span id="subtotal">₹0</span></div><div class="summary-row"><span>Parcel charge</span><span>₹5</span></div><div class="summary-row total-row"><span>Total</span><span id="totalAmount">₹5</span></div></div>
+  <div class="checkout-section">
+    <div class="input-group"><label><i class="fas fa-phone-alt"></i> Phone *</label><input type="tel" id="phoneInput" placeholder="WhatsApp number"></div>
+    <div class="input-group"><label><i class="fas fa-map-pin"></i> Location</label><div class="location-action"><button class="locate-btn" id="getLocationBtn"><i class="fas fa-location-dot"></i> Capture</button><span id="locationStatus">Tap to share</span></div><div id="map" style="height:140px; border-radius:24px;"></div></div>
+    <button class="whatsapp-btn" id="whatsappOrderBtn"><i class="fab fa-whatsapp"></i> Send via WhatsApp</button>
+  </div>
+</div>
+
+<script>
+  (function(){
+    // Splash
+    setTimeout(() => {
+      document.getElementById('splash').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('splash').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+      }, 600);
+    }, 5000);
+
+    // ---------- MENU DATA ----------
+    const menuData = [
+      { cat:"SANDWICH", name:"Veg Sandwich", price:60 },
+      { cat:"SANDWICH", name:"Veg Cheese Loaded", price:75 },
+      { cat:"SANDWICH", name:"Tomato Cucumber", price:60 },
+      { cat:"SANDWICH", name:"Chocolate Sandwich", price:100 },
+      { cat:"SANDWICH", name:"Corn Cheese", price:90 },
+      { cat:"SANDWICH", name:"Paneer Sandwich", price:95 },
+      { cat:"SANDWICH", name:"Mushroom Sandwich", price:85 },
+      { cat:"SANDWICH", name:"Chilli Cheese", price:80 },
+      { cat:"SANDWICH", name:"Garlic Sandwich", price:90 },
+      { cat:"SANDWICH", name:"Cafe Special", price:120 },
+      { cat:"PIZZA", name:"Cheese Pizza", price:140 },
+      { cat:"PIZZA", name:"Mexican Green Wave", price:150 },
+      { cat:"PIZZA", name:"Cheese N Corn", price:150 },
+      { cat:"PIZZA", name:"Paneer Pizza", price:160 },
+      { cat:"PIZZA", name:"Mushroom Pizza", price:160 },
+      { cat:"PIZZA", name:"Veg Paradise", price:170 },
+      { cat:"PIZZA", name:"Veg Deluxe", price:180 },
+      { cat:"PIZZA", name:"Indi Tandoori Paneer", price:180 },
+      { cat:"PIZZA", name:"Hot Spicy Cheese", price:150 },
+      { cat:"COLD DRINKS", name:"Lime Ice tea", price:50 },
+      { cat:"COLD DRINKS", name:"Ginger Lime Ice tea", price:50 },
+      { cat:"COLD DRINKS", name:"Peach Ice tea", price:50 },
+      { cat:"COLD DRINKS", name:"Cold Coffee", price:50 },
+      { cat:"COLD DRINKS", name:"Rose Milk", price:60 },
+      { cat:"COLD DRINKS", name:"Cold Badam milk", price:70 },
+      { cat:"COLD DRINKS", name:"Iced American", price:50 },
+      { cat:"COLD DRINKS", name:"Lime soda", price:30 },
+      { cat:"COLD DRINKS", name:"Lime juice", price:30 },
+      { cat:"COLD DRINKS", name:"Chilli Lime soda", price:40 },
+      { cat:"FRUIT BOWLS", name:"Fruit Bowl", price:40 },
+      { cat:"FRUIT BOWLS", name:"Fruit Bowl with Icecream", price:70 },
+      { cat:"FRUIT BOWLS", name:"Jamoon With Ice Cream", price:80 },
+      { cat:"MOJITOES", name:"Strawberry Fizz", price:60 },
+      { cat:"MOJITOES", name:"Blue Lagoon", price:60 },
+      { cat:"MOJITOES", name:"Virgin Mint", price:60 },
+      { cat:"MOJITOES", name:"Water Melon Fizz", price:70 },
+      { cat:"MOJITOES", name:"Blueberry Vibe", price:70 },
+      { cat:"MOJITOES", name:"Black Current Fizz", price:70 },
+      { cat:"MOJITOES", name:"Passion Fruit", price:70 },
+      { cat:"MOJITOES", name:"Green Ocean", price:70 },
+      { cat:"MOJITOES", name:"Blue Froozy", price:70 },
+      { cat:"MOJITOES", name:"Peach Ferari", price:70 },
+      { cat:"ICE CREAM", name:"Vanilla", price:40 },
+      { cat:"ICE CREAM", name:"Chocolate", price:50 },
+      { cat:"ICE CREAM", name:"Butter Scotch", price:50 },
+      { cat:"ICE CREAM", name:"Pista", price:50 },
+      { cat:"ICE CREAM", name:"Black Current", price:50 },
+      { cat:"ICE CREAM", name:"Strawberry", price:40 },
+      { cat:"ICE CREAM", name:"Mango", price:40 },
+      { cat:"ICE CREAM", name:"Mixed Scoop (3)", price:80 },
+      { cat:"ICE CREAM", name:"Choco Vanilla", price:70 },
+      { cat:"BUNS & BREADS", name:"Spicy Bun", price:40 },
+      { cat:"BUNS & BREADS", name:"Spicy Cheese Bun", price:70 },
+      { cat:"BUNS & BREADS", name:"Cheese Corn Garlic Bread", price:120 },
+      { cat:"BUNS & BREADS", name:"Paneer Cheese Garlic Bread", price:130 },
+      { cat:"EGG SPECIALS", name:"Egg Sandwich (Reg)", price:60 },
+      { cat:"EGG SPECIALS", name:"Egg Sandwich (Loaded)", price:75 },
+      { cat:"EGG SPECIALS", name:"Egg Pizza", price:160 },
+      { cat:"EGG SPECIALS", name:"Bread Omelet", price:50 },
+      { cat:"EGG SPECIALS", name:"Cheese Bread Omelet", price:70 },
+      { cat:"EGG SPECIALS", name:"Boiled Egg Fry", price:80 },
+      { cat:"EGG SPECIALS", name:"Boiled Egg Toast", price:80 },
+      { cat:"EGG SPECIALS", name:"Egg Maggie", price:60 },
+      { cat:"EGG SPECIALS", name:"Egg Maggie Cheese", price:70 },
+      { cat:"EGG SPECIALS", name:"Egg Omelet", price:40 },
+      { cat:"FALOODA", name:"Royal Falooda", price:120 },
+      { cat:"FALOODA", name:"Gadbad", price:120 },
+      { cat:"SMOOTHIES", name:"Chocolate Banana", price:90 },
+      { cat:"SMOOTHIES", name:"Dry Fruit Banana", price:100 },
+      { cat:"SMOOTHIES", name:"Apple Banana", price:80 },
+      { cat:"SMOOTHIES", name:"Water Melon", price:60 },
+      { cat:"SMOOTHIES", name:"Mango Banana", price:70 },
+      { cat:"SMOOTHIES", name:"Choco Vanilla", price:100 },
+      { cat:"BURGER", name:"Classic Veg Burger", price:70 },
+      { cat:"BURGER", name:"Aloo Tikki Burger", price:70 },
+      { cat:"BURGER", name:"Veg Cheese Burger", price:85 },
+      { cat:"BURGER", name:"Double Patty Cheese", price:100 },
+      { cat:"BURGER", name:"Cheese Nuggets Burger", price:80 },
+      { cat:"BURGER", name:"Cheese Fries Burger", price:80 },
+      { cat:"MILK SHAKES", name:"Oreo Milkshake", price:80 },
+      { cat:"MILK SHAKES", name:"Chocolate Milkshake", price:80 },
+      { cat:"MILK SHAKES", name:"Kitkat Milkshake", price:85 },
+      { cat:"MILK SHAKES", name:"Dry Fruit Milkshake", price:80 },
+      { cat:"MILK SHAKES", name:"Oats Banana", price:70 },
+      { cat:"MILK SHAKES", name:"Black Lady", price:80 },
+      { cat:"MILK SHAKES", name:"Munch Milkshake", price:70 },
+      { cat:"MILK SHAKES", name:"Boost Milkshake", price:70 },
+      { cat:"MILK SHAKES", name:"Belgium Chocolate", price:100 },
+      { cat:"MILK SHAKES", name:"Pista Milkshake", price:80 },
+      { cat:"MILK SHAKES", name:"Apple Milkshake", price:70 },
+      { cat:"EXTRAS", name:"Extra Cheese", price:20 },
+    ];
+
+    // Real image URLs (Unsplash food images)
+    const categoryImages = {
+      "SANDWICH": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&h=200&fit=crop&auto=format",
+      "PIZZA": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=200&fit=crop&auto=format",
+      "COLD DRINKS": "rose-milk-recipe-3.jpg",
+      "FRUIT BOWLS": "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=400&h=200&fit=crop&auto=format",
+      "MOJITOES": "blue-mojito-curacao-cocktail-featured.jpg",
+      "ICE CREAM": "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=400&h=200&fit=crop&auto=format",
+      "BUNS & BREADS": "ready-to-be-eaten-cheesy-garlic-bread.jpg",
+      "EGG SPECIALS": "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400&h=200&fit=crop&auto=format",
+      "FALOODA": "Homemade-Falooda-Recipe-Falooda-Ice-Cream5.jpg",
+      "SMOOTHIES": "https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=400&h=200&fit=crop&auto=format",
+      "BURGER": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=200&fit=crop&auto=format",
+      "MILK SHAKES": "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&h=200&fit=crop&auto=format",
+      "EXTRAS": "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=400&h=200&fit=crop&auto=format"
+    };
+
+    const categories = [...new Set(menuData.map(i => i.cat))];
+    let cart = [];
+    let map, marker;
+    let userLocation = null;
+
+    // Render category chips (no ALL, grid wrap)
+    function renderChips() {
+      let html = '';
+      categories.forEach(cat => {
+        const img = categoryImages[cat] || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=50&h=50&fit=crop";
+        html += `<div class="cat-chip" data-cat="${cat}"><img src="${img}"> ${cat}</div>`;
+      });
+      document.getElementById('categoryGrid').innerHTML = html;
+      document.querySelectorAll('.cat-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          filterSections(chip.dataset.cat);
+        });
+      });
+      // activate first category by default
+      if (categories.length) {
+        const firstChip = document.querySelector(`.cat-chip[data-cat="${categories[0]}"]`);
+        if(firstChip) firstChip.classList.add('active');
+        filterSections(categories[0]);
+      }
+    }
+
+    function filterSections(cat) {
+      document.querySelectorAll('.menu-section').forEach(s => {
+        s.style.display = s.id === `section-${cat.replace(/\s+/g,'')}` ? 'block' : 'none';
+      });
+    }
+
+    function renderMenu() {
+      let html = '';
+      categories.forEach(cat => {
+        const items = menuData.filter(i => i.cat === cat);
+        const imgUrl = categoryImages[cat] || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=200';
+        html += `<div class="menu-section" id="section-${cat.replace(/\s+/g,'')}" style="display: none;">`;
+        html += `<div class="section-banner" style="background-image: url('${imgUrl}');">
+          <div class="banner-content">
+            <div class="banner-title">${cat}</div>
+            <div class="banner-time"><i class="far fa-clock"></i> Available all day · 10am–10pm</div>
+          </div>
+        </div>`;
+        html += `<div class="menu-grid">`;
+        items.forEach(item => {
+          html += `<div class="menu-card"><div class="item-name">${item.name}</div><div class="item-desc">${cat.toLowerCase()}</div><div class="item-price">₹${item.price}</div><button class="add-btn" data-add='${JSON.stringify(item)}'><i class="fas fa-plus-circle"></i> Add</button></div>`;
+        });
+        html += `</div></div>`;
+      });
+      document.getElementById('menuContainer').innerHTML = html;
+      document.querySelectorAll('.add-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          addToCart(JSON.parse(btn.dataset.add));
+          document.getElementById('iosPopup').classList.add('show');
+          setTimeout(() => document.getElementById('iosPopup').classList.remove('show'), 4000);
+        });
+      });
+      // show first section
+      if(categories.length) {
+        document.getElementById(`section-${categories[0].replace(/\s+/g,'')}`).style.display = 'block';
+      }
+    }
+
+    function addToCart(item) {
+      const existing = cart.find(i => i.name === item.name);
+      if(existing) existing.quantity++;
+      else cart.push({...item, quantity:1});
+      updateCartUI();
+    }
+    function updateCartUI() {
+      const count = cart.reduce((s,i) => s + i.quantity, 0);
+      document.getElementById('cart-count').textContent = count;
+      let subtotal = cart.reduce((s,i) => s + i.price*i.quantity, 0);
+      document.getElementById('subtotal').textContent = `₹${subtotal}`;
+      document.getElementById('totalAmount').textContent = `₹${subtotal+5}`;
+      const container = document.getElementById('cartItemsContainer');
+      container.innerHTML = cart.length ? '' : '<p style="padding:20px;text-align:center;">Your bag is empty</p>';
+      cart.forEach((item, idx) => {
+        const div = document.createElement('div'); div.className='cart-item';
+        div.innerHTML = `<div><div class="cart-item-title">${item.name}</div><div>₹${item.price}</div></div>
+          <div class="cart-item-actions"><button class="qty-dec" data-idx="${idx}">−</button><span>${item.quantity}</span><button class="qty-inc" data-idx="${idx}">+</button></div>`;
+        container.appendChild(div);
+      });
+      document.querySelectorAll('.qty-inc').forEach(b => b.addEventListener('click', e => updateQty(b.dataset.idx, 1)));
+      document.querySelectorAll('.qty-dec').forEach(b => b.addEventListener('click', e => updateQty(b.dataset.idx, -1)));
+    }
+    function updateQty(idx, delta) {
+      if(cart[idx].quantity + delta <= 0) cart.splice(idx,1);
+      else cart[idx].quantity += delta;
+      updateCartUI();
+    }
+
+    // Map
+    function initMap() {
+      const pos = { lat: 12.2958, lng: 76.6394 };
+      map = new google.maps.Map(document.getElementById('map'), { center: pos, zoom: 14 });
+      marker = new google.maps.Marker({ position: pos, map });
+    }
+    document.getElementById('getLocationBtn').addEventListener('click', () => {
+      navigator.geolocation.getCurrentPosition(p => {
+        userLocation = { lat: p.coords.latitude, lng: p.coords.longitude };
+        map.setCenter(userLocation); marker.setPosition(userLocation);
+        document.getElementById('locationStatus').textContent = `📍 captured`;
+      }, () => alert('Location denied'));
+    });
+
+    document.getElementById('whatsappOrderBtn').addEventListener('click', () => {
+      const phone = document.getElementById('phoneInput').value.trim();
+      if(!phone) return alert('Enter phone');
+      let text = `*Charlie's Cafe Yelandur*\nPhone: ${phone}\n`;
+      if(userLocation) text += `📍 https://maps.google.com/?q=${userLocation.lat},${userLocation.lng}\n`;
+      cart.forEach(i => text += `• ${i.name} x${i.quantity}  ₹${i.price*i.quantity}\n`);
+      const subtotal = cart.reduce((s,i)=> s + i.price*i.quantity,0);
+      text += `\nSubtotal: ₹${subtotal}\nParcel: ₹5\nTotal: ₹${subtotal+5}`;
+      window.open(`https://wa.me/917349141327?text=${encodeURIComponent(text)}`, '_blank');
+    });
+
+    const panel = document.getElementById('orderPanel'), overlay = document.getElementById('overlay');
+    document.getElementById('cartButton').addEventListener('click', () => { panel.classList.add('open'); overlay.classList.add('show'); });
+    document.getElementById('closePanelBtn').addEventListener('click', () => { panel.classList.remove('open'); overlay.classList.remove('show'); });
+    overlay.addEventListener('click', () => { panel.classList.remove('open'); overlay.classList.remove('show'); });
+    document.getElementById('popupPlaceOrderBtn').addEventListener('click', () => {
+      document.getElementById('iosPopup').classList.remove('show');
+      panel.classList.add('open'); overlay.classList.add('show');
+    });
+
+    renderChips();
+    renderMenu();
+    updateCartUI();
+    window.initMap = initMap;
+    if(typeof google !== 'undefined') initMap();
+  })();
+</script>
+</body>
+</html>
